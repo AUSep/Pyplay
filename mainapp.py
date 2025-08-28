@@ -4,7 +4,7 @@ from PyQt6.QtGui import QFileSystemModel, QFont, QPainter, QColor,\
 QBrush, QLinearGradient
 from PyQt6.QtWidgets import QApplication, QPushButton, QMainWindow,\
 QStyle, QGridLayout, QWidget, QTreeView, QGraphicsDropShadowEffect,\
-QScrollArea, QFrame, QSizePolicy
+QScrollArea, QFrame, QSizePolicy, QSlider, QLabel
 import sys
 
 class MarqueeLabel(QWidget):
@@ -95,13 +95,36 @@ class MarqueeLabel(QWidget):
 
     def minimumSizeHint(self):
         return self.fontMetrics().boundingRect("M" * 20).size()
+    
+class VolumeSlider(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.lay = QGridLayout(self)
+        self.lay.setContentsMargins(5,5,5,5)
+        self.lay.setSpacing(5)
+        self.slider = QSlider(Qt.Orientation.Horizontal, self)
+        self.slider.setRange(0,100)
+        self.slider.setValue(100)
+        self.slider.valueChanged.connect(self.setVolume)
+        self.lay.addWidget(self.slider, 0, 0, 1, 4)
+
+        pixmapi = QStyle.StandardPixmap.SP_MediaVolume
+        icon = self.style().standardIcon(pixmapi)
+        icon_lbl = QLabel()
+        icon_lbl.setPixmap(icon.pixmap(24,24))
+        self.lay.addWidget(icon_lbl, 0, 5)
+    
+    def setVolume(self):
+        pass
 
 class PlayerButtons(QWidget):
-    def __init__(self, file_path : str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.filePath = file_path
+    def __init__(self):
+        super().__init__()
+        self.filePath = None
         self.btn_layout = QGridLayout()
         self.setLayout(self.btn_layout)
+        self.btn_layout.setContentsMargins(0,0,0,0)
+        self.btn_layout.setSpacing(0)
 
         icon_dict={
             "Play" : QStyle.StandardPixmap.SP_MediaPlay,
@@ -123,6 +146,9 @@ class PlayerButtons(QWidget):
         self.__pause_btn.clicked.connect(self.next)
         self.__pause_btn = btn_dict["Stop"]
         self.__pause_btn.clicked.connect(self.stop)
+
+        self.__volume_slider = VolumeSlider()
+        self.btn_layout.addWidget(self.__volume_slider, 0, 6, 1, 2)
 
     def play(self):
         pass
@@ -156,13 +182,15 @@ class ExpandableTab(QWidget):
         super().__init__()
         self.pad_list = []
         self.lay = QGridLayout(self)
+        self.lay.setContentsMargins(0,0,0,0)
+        self.lay.setSpacing(0)
         self.expand_anim_duration = 220
 
         #Tab button setting
         self.header_btn = QPushButton(title)
         self.header_btn.setCheckable(True)
         self.header_btn.setChecked(expanded)
-        self.header_btn.setStyleSheet("text-align: left; padding: 8px;")
+        self.header_btn.setStyleSheet("text-align: left; padding: 8px")
         self.header_btn.clicked.connect(self.toggle)
 
         # Content area en QScrollArea
@@ -175,7 +203,7 @@ class ExpandableTab(QWidget):
 
         # Forzamos políticas para que el contenido tenga height fijo cuando colapsado/expandido
         self.content_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # calcular altura objetivo del contenido
         self._content_height = content_widget.sizeHint().height()
@@ -238,21 +266,20 @@ class ExpandableTab(QWidget):
             self.content_area.setMaximumHeight(self._content_height)
         else:
             self.content_area.setMaximumHeight(0)
-        # ajustar tamaño final de la ventana por si small differences
-        w = self.window()
-        if w:
-            w.adjustSize()
 
 class TabsPanel(QWidget):
     def __init__(self):
         super().__init__()
         self.tab_list : list[ExpandableTab] = []
         self.lay = QGridLayout(self)
-
+        self.lay.setContentsMargins(0,0,0,0)
+        self.lay.setSpacing(0)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        
     def new_tab(self, tab : ExpandableTab):
         self.lay.addWidget(tab, 0, self.lay.count())
         self.tab_list.append(tab)
-        tab.header_btn.clicked.connect(lambda checked, t=tab: self)
+        tab.header_btn.clicked.connect(lambda checked, t=tab: self._on_section_toggled(t))
     
     def _on_section_toggled(self, toggled_tab : ExpandableTab):
         if toggled_tab.header_btn.isChecked():
@@ -266,9 +293,11 @@ class MainWin(QMainWindow):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle('Ventana principal')
-        self.setGeometry(100, 100, 500, 300)
+        self.setGeometry(100, 100, 300, 150)
         mainwdgt = QWidget(self)
         layout = QGridLayout()
+        layout.setContentsMargins(0,0,0,0)
+        layout.setSpacing(0)
         mainwdgt.setLayout(layout)
         self.setCentralWidget(mainwdgt)
 
@@ -283,8 +312,9 @@ class MainWin(QMainWindow):
         self.tree_view.selectionModel().selectionChanged.connect(self.getFile)
 
         self.tab_panel = TabsPanel()
-        self_browser_tab = ExpandableTab(self.tree_view, "Browse files..")
-        self.tab_panel.new_tab(self_browser_tab)
+        self.browser_tab = ExpandableTab(self.tree_view, "Browse files..")
+        self.tab_panel.new_tab(self.browser_tab)
+
         layout.addWidget(self.tab_panel, 3, 0)
 
         title_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
@@ -301,7 +331,8 @@ class MainWin(QMainWindow):
         self.marquee.setGraphicsEffect(glow)
 
         #Player layout
-        player_btns = PlayerButtons(self.marquee, self.tree_view)
+        player_btns = PlayerButtons()
+        player_btns.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(player_btns,1,0)
 
         self.show()

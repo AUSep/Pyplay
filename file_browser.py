@@ -1,11 +1,7 @@
-from PyQt6.QtWidgets import QWidget, QApplication, QGridLayout, QPushButton, QTreeView
+from PyQt6.QtWidgets import (QWidget, QApplication, QGridLayout, QPushButton, QTreeView)
 from PyQt6.QtGui import QFileSystemModel
-from PyQt6.QtCore import QDir
+from PyQt6.QtCore import QDir, QItemSelection
 import sys
-
-class FileView(QWidget):
-    def __init__(self):
-        super().__init__()
 
 class Browser(QWidget):
     def __init__(self):
@@ -33,6 +29,8 @@ class Browser(QWidget):
             tree_view = QTreeView(self.view_hold)
             tree_view.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
             tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
+            self.hold_lay.addWidget(tree_view,0,0)
+            self.clearHold()
             self.views.append(tree_view)
             i += 1
 
@@ -50,6 +48,7 @@ class Browser(QWidget):
         self.views[obj].show()
         btn_toggled = any([b.isChecked() for b in self.btns])
         self.view_hold.setVisible(btn_toggled)
+        self.adjustSize()
     
     def clearHold(self):
         while self.hold_lay.count():
@@ -57,28 +56,39 @@ class Browser(QWidget):
             w = item.widget()
             if w:
                 w.hide()
-                self.hold_lay.removeWidget(w)
-        
     
+    def getFile(self, selected : QItemSelection, deselected: QItemSelection):
+        sel = selected.indexes()
+        index = sel[0]
+        sender : QTreeView = self.sender()
+        if isinstance(sender.model(), QFileSystemModel):
+            model : QFileSystemModel = sender.model()
+            path = model.filePath(index)
+            print(path)
+
+        
     def setBrowserTree(self):
-        file_model= QFileSystemModel()
+        file_model= QFileSystemModel(self)
         file_model.setRootPath(QDir.rootPath())
         tree = self.views[0]
         tree.setModel(file_model)
+        tree.selectionModel().selectionChanged.connect(self.getFile)
         tree.setRootIndex(file_model.index(QDir.homePath()))
 
     def setGalTree(self):
-        file_model= QFileSystemModel()
+        file_model= QFileSystemModel(self)
         file_model.setRootPath(QDir.rootPath())
         tree = self.views[1]
         tree.setModel(file_model)
+        tree.selectionModel().selectionChanged.connect(self.getFile)
         tree.setRootIndex(file_model.index('/home/anibal/Escritorio'))
 
     def setPlaylistTree(self):
-        file_model= QFileSystemModel()
+        file_model= QFileSystemModel(self)
         file_model.setRootPath(QDir.rootPath())
         tree = self.views[2]
         tree.setModel(file_model)
+        tree.selectionModel().selectionChanged.connect(self.getFile)
         tree.setRootIndex(file_model.index('/home/anibal/Documentos'))
     
 if __name__ == '__main__':

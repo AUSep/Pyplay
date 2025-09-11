@@ -1,17 +1,16 @@
 from PyQt6.QtWidgets import (QWidget, QApplication, QGridLayout, QPushButton, QTreeView)
 from PyQt6.QtGui import QFileSystemModel
-from PyQt6.QtCore import QDir, QItemSelection
+from PyQt6.QtCore import QDir, QItemSelection, pyqtSignal
 from pymediainfo import MediaInfo
 import sys
 
 class Browser(QWidget):
+    file_data = pyqtSignal(str)
     def __init__(self):
         super().__init__()
         self.lay = QGridLayout(self)
         self.lay.setContentsMargins(0,0,0,0)
         self.lay.setSpacing(0)
-
-        self.media_info = None
 
         browser_btn = QPushButton(self, text = 'Browse files...')
         gallery_btn = QPushButton(self, text = 'Media gallery')
@@ -67,8 +66,8 @@ class Browser(QWidget):
         if isinstance(sender.model(), QFileSystemModel):
             model : QFileSystemModel = sender.model()
             path = model.filePath(index)
-            self.media_info = MediaInfo.parse(path, output='text', full=False)
-            print(self.media_info)
+            #media_info = MediaInfo.parse(path, output='text', full=False)
+            self.file_data.emit(path)
 
         
     def setBrowserTree(self):
@@ -94,6 +93,3 @@ class Browser(QWidget):
         tree.setModel(file_model)
         tree.selectionModel().selectionChanged.connect(self.getFile)
         tree.setRootIndex(file_model.index('/home/anibal/Documentos'))
-
-    def getMediaInfo(self) -> MediaInfo:
-        return self.media_info

@@ -1,101 +1,11 @@
-from PyQt6.QtCore import QDir, QTimer, QItemSelection, Qt, QPropertyAnimation, QEasingCurve,\
-QSize
-from PyQt6.QtGui import QFileSystemModel, QFont, QPainter, QColor,\
-QBrush, QLinearGradient
-from PyQt6.QtWidgets import QApplication, QPushButton, QMainWindow,\
-QStyle, QGridLayout, QWidget, QTreeView, QGraphicsDropShadowEffect,\
-QScrollArea, QFrame, QSizePolicy, QSlider, QLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtWidgets import (QApplication, QPushButton, QMainWindow,
+QStyle, QGridLayout, QWidget, QGraphicsDropShadowEffect,
+QSizePolicy, QSlider, QLabel)
 from file_browser import Browser
+from marquee_label import MarqueeLabel
 import sys
-
-class MarqueeLabel(QWidget):
-    def __init__(self, parent=None, font=None, speed_px_per_sec=80, gap=40):
-        super().__init__(parent)
-        self._text = ""
-        self._offset = 0.0
-        self._gap = gap
-        self._timer = QTimer(self)
-        self._timer.setInterval(30)  # ms
-        self._timer.timeout.connect(self._tick)
-        self._label_font = font
-        self._speed_px_per_sec = max(1, speed_px_per_sec)
-        self.setMinimumHeight(48)
-        self._timer.start()
-
-    def setText(self, text: str):
-        self._text = text or ""
-        self._offset = 0.0
-        self.update()
-
-    def setSpeed(self, px_per_second: int):
-        self._speed_px_per_sec = max(1, px_per_second)
-
-    def resizeEvent(self, event):
-        self._offset = 0.0
-        super().resizeEvent(event)
-
-    def _tick(self):
-        if not self._text:
-            return
-        fm = self.fontMetrics()
-        text_width = fm.horizontalAdvance(self._text)
-        if text_width <= self.width():
-            if self._offset != 0.0:
-                self._offset = 0.0
-                self.update()
-            return
-
-        dt = self._timer.interval() / 1000.0
-        step = self._speed_px_per_sec * dt
-        self._offset += step
-        wrap_at = text_width + self._gap
-        if self._offset >= wrap_at:
-            self._offset -= wrap_at
-        self.update()
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setFont(self._label_font)
-
-        fm = painter.fontMetrics()
-        text_width = fm.horizontalAdvance(self._text)
-        y = (self.height() + fm.ascent() - fm.descent()) // 2
-
-        grad = QLinearGradient(0, 0, self.width(), 0)
-        grad.setColorAt(0.0, QColor("#ffffff"))
-        grad.setColorAt(0.5, QColor("#ffd86b"))
-        grad.setColorAt(1.0, QColor("#ff6b6b"))
-
-        if text_width == 0:
-            return
-
-        if text_width <= self.width():
-            x = (self.width() - text_width) // 2
-            painter.setPen(QColor(30, 30, 30, 160))
-            painter.drawText(x + 2, y + 2, self._text)
-            painter.setPen(QColor(255, 255, 255))
-            painter.drawText(x, y, self._text)
-            return
-
-        x_start = -self._offset
-        gap = self._gap
-
-        painter.setPen(QColor(30, 30, 30, 160))
-        painter.drawText(int(x_start) + 2, y + 2, self._text)
-        painter.drawText(int(x_start + text_width + gap) + 2, y + 2, self._text)
-
-        # aplicar gradiente frontal usando brush
-        painter.setPen(QColor(255, 255, 255))
-        painter.setBrush(QBrush(grad))
-        painter.drawText(int(x_start), y, self._text)
-        painter.drawText(int(x_start + text_width + gap), y, self._text)
-
-    def sizeHint(self):
-        return self.minimumSizeHint()
-
-    def minimumSizeHint(self):
-        return self.fontMetrics().boundingRect("M" * 20).size()
     
 class VolumeSlider(QWidget):
     def __init__(self):
@@ -178,96 +88,6 @@ class PlayerButtons(QWidget):
             i += 1
         return btn_dct
 
-class ExpandableTab(QWidget):
-    def __init__(self, content_widget : QWidget, title : str, expanded : bool = False):
-        super().__init__()
-        self.pad_list = []
-        self.lay = QGridLayout(self)
-        self.lay.setContentsMargins(0,0,0,0)
-        self.lay.setSpacing(0)
-        self.expand_anim_duration = 220
-
-        #Tab button setting
-        self.header_btn = QPushButton(title)
-        self.header_btn.setCheckable(True)
-        self.header_btn.setChecked(expanded)
-        self.header_btn.setStyleSheet("text-align: left; padding: 8px")
-        self.header_btn.clicked.connect(self.toggle)
-
-        # Content area en QScrollArea
-        self.content_area = QScrollArea()
-        self.content_area.setWidgetResizable(True)
-        self.content_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.content_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.content_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.content_area.setWidget(content_widget)
-
-        # Forzamos políticas para que el contenido tenga height fijo cuando colapsado/expandido
-        self.content_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        # calcular altura objetivo del contenido
-        self._content_height = content_widget.sizeHint().height()
-        if expanded:
-            self.content_area.setMaximumHeight(self._content_height)
-        else:
-            self.content_area.setMaximumHeight(0)
-
-        # animación de maximumHeight del content_area
-        self._anim = QPropertyAnimation(self.content_area, b"maximumHeight", self)
-        self._anim.setDuration(self.expand_anim_duration)
-        self._anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
-        self._anim.finished.connect(self._on_anim_finished)
-
-        self.lay.setSpacing(0)
-        self.lay.setContentsMargins(0, 0, 0, 0)
-        self.lay.addWidget(self.header_btn)
-        self.lay.addWidget(self.content_area)
-
-    def toggle(self):
-        checked = self.header_btn.isChecked()
-        start = self.content_area.maximumHeight()
-        end = self._content_height if checked else 0
-
-        # detener animaciones previas
-        if self._anim.state() == QPropertyAnimation.State.Running:
-            self._anim.stop()
-        if getattr(self, "_top_anim", None) and self._top_anim.state() == QPropertyAnimation.State.Running:
-            self._top_anim.stop()
-
-        # animar content_area
-        self._anim.setStartValue(start)
-        self._anim.setEndValue(end)
-
-        # animar ventana principal para acompañar el cambio de altura
-        top = self.window()
-        if top is not None:
-            # calcular delta de altura
-            delta = end - start
-            self._top_anim = QPropertyAnimation(top, b"size", self)
-            self._top_anim.setDuration(self.expand_anim_duration)
-            self._top_anim.setEasingCurve(QEasingCurve.Type.InOutCubic)
-            self._top_anim.setStartValue(top.size())
-            new_size = QSize(top.width(), max(1, top.height() + delta))
-            self._top_anim.setEndValue(new_size)
-            # mantener referencia hasta que termine
-            self._top_anim.start()
-
-        self._anim.start()
-
-    def setExpanded(self, expand: bool):
-        if self.header_btn.isChecked() == expand:
-            return
-        self.header_btn.setChecked(expand)
-        self.toggle()
-
-    def _on_anim_finished(self):
-        # asegurar que maximumHeight coincida exactamente al final
-        if self.header_btn.isChecked():
-            self.content_area.setMaximumHeight(self._content_height)
-        else:
-            self.content_area.setMaximumHeight(0)
-
 class MainWin(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -282,16 +102,17 @@ class MainWin(QMainWindow):
         mainwdgt.setLayout(layout)
         self.setCentralWidget(mainwdgt)
 
-        #File browser and directory entry
-        self.browser = Browser()
-        layout.addWidget(self.browser, 3, 0)
-
         title_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
         title_font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 0.5)
 
-        self.marquee = MarqueeLabel(font=title_font, speed_px_per_sec=80, gap=40)
+        self.marquee = MarqueeLabel(font=title_font)
         self.marquee.setStyleSheet("background: transparent;")
         layout.addWidget(self.marquee,0,0)
+
+        #File browser and directory entry
+        self.browser = Browser()
+        self.browser.file_data.connect(self.marquee.setText)
+        layout.addWidget(self.browser, 3, 0)
 
         glow = QGraphicsDropShadowEffect()
         glow.setBlurRadius(22)
@@ -305,13 +126,6 @@ class MainWin(QMainWindow):
         layout.addWidget(player_btns,1,0)
 
         self.show()
-
-    def getFile(self, selected : QItemSelection, deselected : QItemSelection):
-        sel = selected.indexes()
-        index = sel[0]
-        if isinstance(self.file_model, QFileSystemModel):
-            path = self.file_model.filePath(index)
-            self.marquee.setText(path)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

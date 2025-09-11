@@ -5,6 +5,7 @@ QBrush, QLinearGradient
 from PyQt6.QtWidgets import QApplication, QPushButton, QMainWindow,\
 QStyle, QGridLayout, QWidget, QTreeView, QGraphicsDropShadowEffect,\
 QScrollArea, QFrame, QSizePolicy, QSlider, QLabel
+from file_browser import Browser
 import sys
 
 class MarqueeLabel(QWidget):
@@ -267,26 +268,6 @@ class ExpandableTab(QWidget):
         else:
             self.content_area.setMaximumHeight(0)
 
-class TabsPanel(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.tab_list : list[ExpandableTab] = []
-        self.lay = QGridLayout(self)
-        self.lay.setContentsMargins(0,0,0,0)
-        self.lay.setSpacing(0)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        
-    def new_tab(self, tab : ExpandableTab):
-        self.lay.addWidget(tab, 0, self.lay.count())
-        self.tab_list.append(tab)
-        tab.header_btn.clicked.connect(lambda checked, t=tab: self._on_section_toggled(t))
-    
-    def _on_section_toggled(self, toggled_tab : ExpandableTab):
-        if toggled_tab.header_btn.isChecked():
-            for s in self.tab_list:
-                if s is not toggled_tab and s.header_btn.isChecked():
-                    s.setExpanded(False)
-
 class MainWin(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -302,20 +283,8 @@ class MainWin(QMainWindow):
         self.setCentralWidget(mainwdgt)
 
         #File browser and directory entry
-        self.file_model= QFileSystemModel()
-        self.file_model.setRootPath(QDir.rootPath())
-        self.tree_view = QTreeView(self)
-        self.tree_view.setModel(self.file_model)
-        self.tree_view.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
-        self.tree_view.setSelectionMode(QTreeView.SelectionMode.SingleSelection)
-        self.tree_view.setRootIndex(self.file_model.index(QDir.homePath()))
-        self.tree_view.selectionModel().selectionChanged.connect(self.getFile)
-
-        self.tab_panel = TabsPanel()
-        self.browser_tab = ExpandableTab(self.tree_view, "Browse files..")
-        self.tab_panel.new_tab(self.browser_tab)
-
-        layout.addWidget(self.tab_panel, 3, 0)
+        self.browser = Browser()
+        layout.addWidget(self.browser, 3, 0)
 
         title_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
         title_font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 0.5)

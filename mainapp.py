@@ -108,17 +108,17 @@ class MainWin(QMainWindow):
         self.marquee = MarqueeLabel(font=title_font)
         self.marquee.setStyleSheet("background: transparent;")
         layout.addWidget(self.marquee,0,0)
-
-        #File browser and directory entry
-        self.browser = Browser()
-        self.browser.file_data.connect(self.marquee.setText)
-        layout.addWidget(self.browser, 3, 0)
-
         glow = QGraphicsDropShadowEffect()
         glow.setBlurRadius(22)
         glow.setColor(QColor(255, 200, 120, 200))
         glow.setOffset(0, 0)
         self.marquee.setGraphicsEffect(glow)
+
+
+        #File browser and directory entry
+        self.browser = Browser()
+        self.browser.file_data.connect(self.marquee.setText)
+        layout.addWidget(self.browser, 3, 0)
 
         #Player layout
         player_btns = PlayerButtons()

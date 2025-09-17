@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QApplication, QPushButton, QMainWindow,
 QStyle, QGridLayout, QWidget, QGraphicsDropShadowEffect,
 QSizePolicy, QSlider, QLabel)
 from file_browser import Browser
-from marquee_label import MarqueeLabel
+from marquee_label import Display
 import sys
     
 class VolumeSlider(QWidget):
@@ -102,22 +102,19 @@ class MainWin(QMainWindow):
         mainwdgt.setLayout(layout)
         self.setCentralWidget(mainwdgt)
 
-        title_font = QFont("Segoe UI", 18, QFont.Weight.Bold)
-        title_font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, 0.5)
-
-        self.marquee = MarqueeLabel(font=title_font)
-        self.marquee.setStyleSheet("background: transparent;")
-        layout.addWidget(self.marquee,0,0)
+        self.display = Display()
+        self.display.setStyleSheet("background: transparent;")
+        layout.addWidget(self.display,0,0)
         glow = QGraphicsDropShadowEffect()
         glow.setBlurRadius(22)
         glow.setColor(QColor(255, 200, 120, 200))
         glow.setOffset(0, 0)
-        self.marquee.setGraphicsEffect(glow)
+        self.display.setGraphicsEffect(glow)
 
 
         #File browser and directory entry
         self.browser = Browser()
-        self.browser.file_data.connect(self.marquee.setText)
+        self.browser.file_data.connect(self.display.marquee.setText)
         layout.addWidget(self.browser, 3, 0)
 
         #Player layout

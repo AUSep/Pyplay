@@ -4,8 +4,8 @@ from PyQt6.QtWidgets import QWidget, QApplication, QGridLayout, QLabel
 import sys
 
 class MarqueeLabel(QWidget):
-    def __init__(self, parent=None, font=None):
-        super().__init__(parent)
+    def __init__(self, font=None):
+        super().__init__()
         self._text = ""
         self._offset = 0.0
         self._timer = QTimer(self)
@@ -75,37 +75,30 @@ class MarqueeLabel(QWidget):
         painter.drawText(int(x_start), y, self._text)
         painter.drawText(int(x_start + text_width), y, self._text)
 
+class Display(QWidget):
+    def __init__(self):
+        super().__init__()
+        lay = QGridLayout(self)
+        font_id = QFontDatabase.addApplicationFont('jd-lcd-rounded-font/JdLcdRoundedRegular-vXwE.ttf')
+        families = QFontDatabase.applicationFontFamilies(font_id)
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    font_id = QFontDatabase.addApplicationFont('jd-lcd-rounded-font/JdLcdRoundedRegular-vXwE.ttf')
-    
-    families = QFontDatabase.applicationFontFamilies(font_id)
+        title_font = QFont(families[0], 30)
+        self.marquee = MarqueeLabel(title_font)
+        self.marquee.setText('Hola mundo, cómo están? este es un string muy largo para ver esto funcionar')
+        lay.addWidget(self.marquee,0,0,1,2)
 
-    wdgt = QWidget()
-    wdgt.setGeometry(100,100,377,55)
-    lay = QGridLayout(wdgt)
+        time_label = QLabel(self, text='00:00')
+        time_label.setFont(QFont(families, 35))
+        lay.addWidget(time_label,0,2, Qt.AlignmentFlag.AlignLeft)
+        
+        bitrate_label = QLabel(self, text='bitrate')
+        bitrate_label.setFont(QFont(families, 15))
+        lay.addWidget(bitrate_label,1,0,Qt.AlignmentFlag.AlignLeft)
 
-    title_font = QFont(families[0], 30)
-    marquee = MarqueeLabel(wdgt, font = title_font)
-    marquee.setText('Hola mundo, cómo están? este es un string muy largo para ver esto funcionar')
-    lay.addWidget(marquee,0,0,1,2)
+        sample_rate = QLabel(self, text='samplerate')
+        sample_rate.setFont(QFont(families, 15))
+        lay.addWidget(sample_rate, 1,1,Qt.AlignmentFlag.AlignLeft)
 
-    time_label = QLabel(wdgt, text='00:00')
-    time_label.setFont(QFont(families, 35))
-    lay.addWidget(time_label,0,2, Qt.AlignmentFlag.AlignLeft)
-    
-    bitrate_label = QLabel(wdgt, text='bitrate')
-    bitrate_label.setFont(QFont(families, 15))
-    lay.addWidget(bitrate_label,1,0,Qt.AlignmentFlag.AlignLeft)
-
-    sample_rate = QLabel(wdgt, text='samplerate')
-    sample_rate.setFont(QFont(families, 15))
-    lay.addWidget(sample_rate, 1,1,Qt.AlignmentFlag.AlignLeft)
-
-    channel_num = QLabel(wdgt, text='Channels')
-    channel_num.setFont(QFont(families, 15))
-    lay.addWidget(channel_num,1,2,Qt.AlignmentFlag.AlignLeft)
-    
-    wdgt.show()
-    sys.exit(app.exec())
+        channel_num = QLabel(self, text='Channels')
+        channel_num.setFont(QFont(families, 15))
+        lay.addWidget(channel_num,1,2,Qt.AlignmentFlag.AlignLeft)

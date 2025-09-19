@@ -66,11 +66,7 @@ class MarqueeLabel(QWidget):
 
         x_start = -self._offset
 
-        painter.setPen(QColor(30, 30, 30, 160))
-        painter.drawText(int(x_start) + 2, y + 2, self._text)
-        painter.drawText(int(x_start + text_width) + 2, y + 2, self._text)
-
-        painter.setPen(QColor(255, 255, 255))
+        painter.setPen(QColor(240, 250, 250))
         painter.setBrush(QBrush(grad))
         painter.drawText(int(x_start), y, self._text)
         painter.drawText(int(x_start + text_width), y, self._text)
@@ -89,16 +85,18 @@ class Display(QWidget):
 
         time_label = QLabel(self, text='00:00')
         time_label.setFont(QFont(families, 35))
+        time_label.setStyleSheet('color: rgb(240, 250, 250);')
         lay.addWidget(time_label,0,2, Qt.AlignmentFlag.AlignLeft)
-        
+
         bitrate_label = QLabel(self, text='bitrate')
-        bitrate_label.setFont(QFont(families, 15))
-        lay.addWidget(bitrate_label,1,0,Qt.AlignmentFlag.AlignLeft)
-
         sample_rate = QLabel(self, text='samplerate')
-        sample_rate.setFont(QFont(families, 15))
-        lay.addWidget(sample_rate, 1,1,Qt.AlignmentFlag.AlignLeft)
-
         channel_num = QLabel(self, text='Channels')
-        channel_num.setFont(QFont(families, 15))
-        lay.addWidget(channel_num,1,2,Qt.AlignmentFlag.AlignLeft)
+        
+        i=0
+        for lbl in (bitrate_label, sample_rate, channel_num):
+            lbl.setFont(QFont(families, 15))
+            lbl.setStyleSheet('color: rgb(240, 250, 250);')
+            if lbl != time_label:
+                lay.addWidget(lbl,1,i,Qt.AlignmentFlag.AlignLeft) 
+            i += 1
+        

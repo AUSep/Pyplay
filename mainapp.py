@@ -107,17 +107,14 @@ class MainWin(QMainWindow):
         layout.addWidget(self.display,0,0)
         glow = QGraphicsDropShadowEffect()
         glow.setBlurRadius(22)
-        glow.setColor(QColor(255, 200, 120, 200))
+        glow.setColor(QColor(210, 250, 250, 200))
         glow.setOffset(0, 0)
         self.display.setGraphicsEffect(glow)
 
-
-        #File browser and directory entry
         self.browser = Browser()
         self.browser.file_data.connect(self.display.marquee.setText)
         layout.addWidget(self.browser, 3, 0)
 
-        #Player layout
         player_btns = PlayerButtons()
         player_btns.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         layout.addWidget(player_btns,1,0)

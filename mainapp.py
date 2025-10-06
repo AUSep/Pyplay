@@ -94,7 +94,7 @@ class MainWin(QMainWindow):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle('Ventana principal')
-        self.setGeometry(100, 100, 300, 150)
+        self.setGeometry(100, 100, 377, 144)
         mainwdgt = QWidget(self)
         layout = QGridLayout()
         layout.setContentsMargins(0,0,0,0)
@@ -107,7 +107,7 @@ class MainWin(QMainWindow):
         layout.addWidget(self.display,0,0)
         glow = QGraphicsDropShadowEffect()
         glow.setBlurRadius(22)
-        glow.setColor(QColor(210, 250, 250, 200))
+        glow.setColor(QColor(210, 250, 250, 200)) 
         glow.setOffset(0, 0)
         self.display.setGraphicsEffect(glow)
 

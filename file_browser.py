@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QApplication, QGridLayout, QPushButton, QTreeView)
 from PyQt6.QtGui import QFileSystemModel
 from PyQt6.QtCore import QDir, QItemSelection, pyqtSignal
-from pymediainfo import MediaInfo
 import sys
 
 class Browser(QWidget):
@@ -66,7 +65,6 @@ class Browser(QWidget):
         if isinstance(sender.model(), QFileSystemModel):
             model : QFileSystemModel = sender.model()
             path = model.filePath(index)
-            #media_info = MediaInfo.parse(path, output='text', full=False)
             self.file_data.emit(path)
 
         

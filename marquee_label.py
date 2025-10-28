@@ -12,6 +12,7 @@ class MarqueeLabel(QWidget):
         self._timer.setInterval(30)
         self._timer.timeout.connect(self._tick)
         self._label_font = font
+        self.setFont(self._label_font)
         self._fm = self.fontMetrics()
         self._speed= max(1, 100)
         self._timer.start()
@@ -19,14 +20,13 @@ class MarqueeLabel(QWidget):
     def setText(self, text: str):
         self._text = text or ""
         self._offset = 0.0
-        print(self._fm.horizontalAdvance(self._text))
         self.update()
 
     def _tick(self):
         if not self._text:
             return
         text_width = self._fm.horizontalAdvance(self._text)
-        if text_width*2 <= self.width():
+        if text_width <= self.width():
             if self._offset != 0.0:
                 self._offset = 0.0
                 self.update()
@@ -35,8 +35,10 @@ class MarqueeLabel(QWidget):
         dt = self._timer.interval() / 1000.0
         step = self._speed * dt
         self._offset += step
-        if self._offset >= text_width*1.8:
-            self._offset -= text_width*1.8
+        if self._offset >= text_width:
+            self._offset -= text_width
+            self._timer.stop()
+            self._timer.start()
         self.update()
 
     def paintEvent(self, event):
@@ -75,14 +77,22 @@ class Display(QWidget):
         time_label.setStyleSheet('color: rgb(240, 250, 250);')
         lay.addWidget(time_label,0,2, Qt.AlignmentFlag.AlignCenter)
 
-        bitrate_label = QLabel(self, text='bitrate')
-        sample_rate = QLabel(self, text='samplerate')
-        channel_num = QLabel(self, text='Channels')
+        self.bitrate_label = QLabel(self, text='bitrate')
+        self.sample_rate = QLabel(self, text='samplerate')
+        self.channel_num = QLabel(self, text='Channels')
         
         i=0
-        for lbl in (bitrate_label, sample_rate, channel_num):
+        for lbl in (self.bitrate_label, self.sample_rate, self.channel_num):
             lbl.setFont(QFont(families, 15))
             lbl.setStyleSheet('color: rgb(240, 250, 250);')
             lay.addWidget(lbl,1,i,Qt.AlignmentFlag.AlignLeft) 
             i += 1
-        
+    
+    def setDisplay(self, data_dict : dict) -> None:
+        try:
+            self.marquee.setText(data_dict['track_name'])
+        except:
+            self.marquee.setText(data_dict['file_name'])
+        self.bitrate_label.setText(data_dict['other_overall_bit_rate'][0])
+        self.sample_rate.setText(str(data_dict['sampling_rate']))
+        self.channel_num.setText('stereo' if data_dict['audio_channels_total'] == '2' else 'mono')

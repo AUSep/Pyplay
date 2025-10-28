@@ -6,6 +6,7 @@ QSizePolicy, QSlider, QLabel)
 from file_browser import Browser
 from marquee_label import Display
 import sys
+from pymediainfo import MediaInfo
     
 class VolumeSlider(QWidget):
     def __init__(self):
@@ -112,7 +113,7 @@ class MainWin(QMainWindow):
         self.display.setGraphicsEffect(glow)
 
         self.browser = Browser()
-        self.browser.file_data.connect(self.display.marquee.setText)
+        self.browser.file_data.connect(self.getFileData)
         layout.addWidget(self.browser, 3, 0)
 
         player_btns = PlayerButtons()
@@ -120,6 +121,18 @@ class MainWin(QMainWindow):
         layout.addWidget(player_btns,1,0)
 
         self.show()
+    
+    def getFileData(self, file_dir : str) -> None:
+        media_info = MediaInfo.parse(file_dir)
+        for track in media_info.general_tracks:
+            data_dict = track.to_data()
+        for track in media_info.audio_tracks:
+            data_dict.update(track.to_data())
+        self.display.setDisplay(data_dict)
+        
+
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

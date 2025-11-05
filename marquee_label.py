@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt, QTimer, QPointF
-from PyQt6.QtGui import QPainter, QColor, QBrush, QLinearGradient, QFont, QFontDatabase
-from PyQt6.QtWidgets import QWidget, QApplication, QGridLayout, QLabel
+from PyQt6.QtGui import QPainter, QColor, QLinearGradient, QFont, QFontDatabase
+from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel
 import sys
 
 class MarqueeLabel(QWidget):
@@ -90,9 +90,9 @@ class Display(QWidget):
     
     def setDisplay(self, data_dict : dict) -> None:
         try:
-            self.marquee.setText(data_dict['track_name'])
-        except:
             self.marquee.setText(data_dict['file_name'])
+        except:
+            self.marquee.setText(data_dict['complete_name'])
         self.bitrate_label.setText(data_dict['other_overall_bit_rate'][0])
         self.sample_rate.setText(str(data_dict['sampling_rate']))
         self.channel_num.setText('stereo' if data_dict['audio_channels_total'] == '2' else 'mono')

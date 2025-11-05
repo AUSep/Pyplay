@@ -1,10 +1,11 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtCore import Qt, QThread
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (QApplication, QPushButton, QMainWindow,
 QStyle, QGridLayout, QWidget, QGraphicsDropShadowEffect,
 QSizePolicy, QSlider, QLabel)
 from file_browser import Browser
 from marquee_label import Display
+from player import OutStream
 import sys
 from pymediainfo import MediaInfo
     
@@ -32,7 +33,6 @@ class VolumeSlider(QWidget):
 class PlayerButtons(QWidget):
     def __init__(self):
         super().__init__()
-        self.filePath = None
         self.btn_layout = QGridLayout()
         self.setLayout(self.btn_layout)
         self.btn_layout.setContentsMargins(0,0,0,0)
@@ -62,8 +62,14 @@ class PlayerButtons(QWidget):
         self.__volume_slider = VolumeSlider()
         self.btn_layout.addWidget(self.__volume_slider, 0, 6, 1, 2)
 
+        self.output_stream = OutStream()
+        self.filePath = None
+
+    def setFilePath(self, path : str)->None:
+        self.filePath = path
+
     def play(self):
-        pass
+        self.output_stream.openStream(self.filePath)
     
     def previous(self):
         pass
@@ -88,7 +94,7 @@ class PlayerButtons(QWidget):
             btn_dct[btn_str] = btn
             i += 1
         return btn_dct
-
+    
 class MainWin(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -116,9 +122,9 @@ class MainWin(QMainWindow):
         self.browser.file_data.connect(self.getFileData)
         layout.addWidget(self.browser, 3, 0)
 
-        player_btns = PlayerButtons()
-        player_btns.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        layout.addWidget(player_btns,1,0)
+        self.player_btns = PlayerButtons()
+        self.player_btns.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.player_btns,1,0)
 
         self.show()
     
@@ -129,7 +135,7 @@ class MainWin(QMainWindow):
         for track in media_info.audio_tracks:
             data_dict.update(track.to_data())
         self.display.setDisplay(data_dict)
-        
+        self.player_btns.setFilePath(data_dict['complete_name'])
 
 
 

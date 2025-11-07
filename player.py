@@ -1,38 +1,34 @@
 import pyaudio
 import wave
 import time
+from PyQt6.QtCore import QThread, QObject, pyqtSignal
 
-class OutStream():
-    def __init__(self):
+class OutStream(QObject):
+    finished = pyqtSignal()
+
+    def __init__(self, path : str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.pa = pyaudio.PyAudio()
         self.stream = None
-        self.wave = None
+        self.path = path
+        self.playing = False
+        self.paused = False
 
-    def callback(self, in_data, frame_count, time_info, status):
-        data = self.wave.readframes(frame_count)
-        return (data, pyaudio.paContinue)
-
-    def openStream(self, path : str)->None:
-        self.wave = wave.open(path, 'rb')
-        self.stream = self.pa.open(format=self.pa.get_format_from_width(self.wave.getsampwidth()),
-                channels=self.wave.getnchannels(),
-                rate=self.wave.getframerate(),
-                output=True,
-                stream_callback=self.callback)
-        while self.stream.is_active():
-            time.sleep(0.1)
-        self.terminateAudio()
-
-    def terminateAudio(self)->None:
-        self.stream.close()
-        self.wave.close()
-        self.pa.terminate()
-
-
-if __name__ == "__main__":
-    player = OutStream()
-    player.openStream('/home/anibal/Documentos/Fisura2/16x44 amuse/Ataque de Pánico.wav')
-    # Mantén el programa en ejecución para que el audio se reproduzca
-    import time
-    time.sleep(10)  # Ajusta el tiempo según la duración del archivo de audio
-    player.terminateAudio()
+    def run(self)->None:
+        self.playing = True
+        with wave.open(self.path, 'rb') as wf:
+            self.stream = self.pa.open(format=self.pa.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True)
+            while len(data := wf.readframes(1064)) and self.playing:
+                if self.paused:
+                    self.stream.stop_stream()
+                else:
+                    if self.stream.is_stopped():
+                        self.stream.start_stream()
+                    self.stream.write(data)
+            self.stream.close()
+            self.pa.terminate()
+            self.finished.emit()
+            self.playing = False

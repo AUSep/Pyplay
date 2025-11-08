@@ -63,9 +63,10 @@ class PlayerButtons(QWidget):
         self.btn_layout.addWidget(self.__volume_slider, 0, 6, 1, 2)
         self.filePath = None
         self.output_stream = None
+        self.play_pos = 0
 
-    def setStream(self)->None:
-        self.output_stream = OutStream(self.filePath)
+    def play(self):
+        self.output_stream = OutStream(self.filePath, self.play_pos)
         self.audio_thread =QThread()
 
         self.output_stream.moveToThread(self.audio_thread)
@@ -75,25 +76,20 @@ class PlayerButtons(QWidget):
         self.audio_thread.finished.connect(self.audio_thread.deleteLater)
 
         self.audio_thread.start()
-
-    def play(self):
-        if self.output_stream:
-            self.output_stream.paused = False
-        else:
-            self.setStream()
-    
     def previous(self):
         pass
 
     def pause(self):
-        self.output_stream.paused = True
-    
+        self.play_pos = self.output_stream.getPos()
+        self.output_stream.stop()
+
     def next(self):
         pass
 
     def stop(self):
-        self.output_stream.playing = False
+        self.output_stream.stop()
         self.output_stream = None
+        self.play_pos = 0
 
     def build_player_buttons(self, icon_dict: dict[str, QStyle.StandardPixmap]) -> dict[str, QPushButton]:
         i = 0
@@ -148,9 +144,6 @@ class MainWin(QMainWindow):
             data_dict.update(track.to_data())
         self.display.setDisplay(data_dict)
         self.player_btns.filePath = data_dict['complete_name']
-
-
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

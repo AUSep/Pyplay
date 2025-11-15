@@ -1,35 +1,34 @@
-import pyaudio
-import wave
-import time
-from PyQt6.QtCore import QThread, QObject, pyqtSignal
+import pyaudio as pa
+import soundfile as sf
+from PyQt6.QtCore import QObject, pyqtSignal
 
 class OutStream(QObject):
     finished = pyqtSignal()
 
     def __init__(self, path : str, pos : int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pa = pyaudio.PyAudio()
+        self.p = pa.PyAudio()
         self.stream = None
         self.path = path
         self.playing = False
         self.pos = pos
 
-
     def run(self)->None:
         self.playing = True
-        with wave.open(self.path, 'rb') as wf:
-            self.stream = self.pa.open(format=self.pa.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
+        with sf.SoundFile(self.path, 'r') as sf_file:
+            self.stream = self.p.open(format=pa.paFloat32,
+                    channels=sf_file.channels,
+                    rate=sf_file.samplerate,
                     output=True)
-            print(self.pos)
-            wf.setpos(self.pos//wf.getsampwidth())
-            while len(data := wf.readframes(1024)) and self.playing:
+            while self.playing:
+                data = sf_file.read(1024, 'float32')
+                if len(data) == 0:
+                    break
                 self.pos += len(data)
-                self.stream.write(data)
+                self.stream.write(data.tobytes())
             
             self.stream.close()
-            self.pa.terminate()
+            self.p.terminate()
             self.finished.emit()
             self.playing = False
     
